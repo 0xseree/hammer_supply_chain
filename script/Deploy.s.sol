@@ -10,15 +10,24 @@ contract DeployScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         HammerSupplyChainFactory factory = new HammerSupplyChainFactory();
-        
+
         // Deploy the supply chain with initial values
         factory.deploySupplyChain(
             // Handle parameters
-            "Wood", "Premium", 0.05 ether, 20,
+            "Wood",
+            "Premium",
+            0.05 ether,
+            20,
             // Shaft parameters
-            "Metal", "Standard", 0.08 ether, 20,
+            "Metal",
+            "Standard",
+            0.08 ether,
+            20,
             // Head parameters
-            "Steel", "Heavy-Duty", 0.12 ether, 20
+            "Steel",
+            "Heavy-Duty",
+            0.12 ether,
+            20
         );
 
         vm.stopBroadcast();
