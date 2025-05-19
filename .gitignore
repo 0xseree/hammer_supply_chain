@@ -12,3 +12,6 @@ docs/
 
 # Dotenv file
 .env
+
+# node
+hammer-dapp/node_modules
