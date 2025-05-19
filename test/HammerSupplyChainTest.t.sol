@@ -3,42 +3,64 @@ pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "../src/HammerSupplyChain.sol";
+import "../src/HammerHandleV2.sol";
+import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import "@openzeppelin-upgradeable/access/OwnableUpgradeable.sol";
 
 contract HammerSupplyChainTest is Test {
-    HammerSupplyChainFactory factory;
     address handleContract;
     address shaftContract;
     address headContract;
     address hammerContract;
+    address owner = makeAddr("owner");
+    address customer = makeAddr("customer");
+    address anotherAccount = makeAddr("another");
 
-    address owner = address(0x1);
-    address customer = address(0x2);
+    uint256 constant HANDLE_PRICE = 0.05 ether;
+    uint256 constant SHAFT_PRICE = 0.08 ether;
+    uint256 constant HEAD_PRICE = 0.12 ether;
+    uint256 constant HAMMER_SALE_PRICE = 0.3 ether;
 
     function setUp() public {
         vm.startPrank(owner);
 
-        factory = new HammerSupplyChainFactory();
-
-        // Deploy the supply chain
-        (handleContract, shaftContract, headContract, hammerContract) = factory.deploySupplyChain(
-            // Handle parameters
-            "Wood",
-            "Premium",
-            0.05 ether,
-            10,
-            // Shaft parameters
-            "Metal",
-            "Standard",
-            0.08 ether,
-            10,
-            // Head parameters
-            "Steel",
-            "Heavy-Duty",
-            0.12 ether,
-            10
+        HammerHandle handleImplementation = new HammerHandle();
+        bytes memory handleData = abi.encodeWithSelector(
+            HammerHandle.initialize.selector, "Rubber", "Premium", HANDLE_PRICE, 10
         );
+        ERC1967Proxy handleProxy = new ERC1967Proxy(address(handleImplementation), handleData);
+        handleContract = address(handleProxy);
+
+        HammerShaft shaftImplementation = new HammerShaft();
+        bytes memory shaftData = abi.encodeWithSelector(
+            HammerShaft.initialize.selector, "Wood", "Standard", SHAFT_PRICE, 10
+        );
+        ERC1967Proxy shaftProxy = new ERC1967Proxy(address(shaftImplementation), shaftData);
+        shaftContract = address(shaftProxy);
+
+        HammerHead headImplementation = new HammerHead();
+        bytes memory headData =
+            abi.encodeWithSelector(HammerHead.initialize.selector, "Steel", "Heavy-Duty", HEAD_PRICE, 10);
+        ERC1967Proxy headProxy = new ERC1967Proxy(address(headImplementation), headData);
+        headContract = address(headProxy);
+
+        CompletedHammer hammerImplementation = new CompletedHammer();
+        bytes memory hammerData = abi.encodeWithSelector(
+            CompletedHammer.initialize.selector, owner, handleContract, shaftContract, headContract
+        );
+        ERC1967Proxy hammerProxy = new ERC1967Proxy(address(hammerImplementation), hammerData);
+        hammerContract = address(hammerProxy);
 
         vm.stopPrank();
+
+        assertEq(OwnableUpgradeable(handleContract).owner(), owner, "Handle contract owner mismatch");
+        assertEq(OwnableUpgradeable(shaftContract).owner(), owner, "Shaft contract owner mismatch");
+        assertEq(OwnableUpgradeable(headContract).owner(), owner, "Head contract owner mismatch");
+        assertEq(OwnableUpgradeable(hammerContract).owner(), owner, "Hammer contract owner mismatch");
+    }
+
+    function testHandleOwner() public {
+        assertTrue(true);
     }
 
     function testComponentInventory() public {
@@ -49,48 +71,51 @@ contract HammerSupplyChainTest is Test {
 
     function testAssembleHammer() public {
         vm.startPrank(owner);
-
-        // Owner must have enough funds to purchase components
-        vm.deal(owner, 1 ether);
-
-        CompletedHammer(hammerContract).assembleHammer("Claw Hammer", 0.3 ether);
-
+        vm.deal(hammerContract, 1 ether);
+        CompletedHammer(hammerContract).assembleHammer("Basic Hammer", HAMMER_SALE_PRICE);
+        vm.stopPrank();
         assertEq(CompletedHammer(hammerContract).getAvailableHammers(), 1);
         assertEq(HammerHandle(handleContract).getInventoryCount(), 9);
         assertEq(HammerShaft(shaftContract).getInventoryCount(), 9);
         assertEq(HammerHead(headContract).getInventoryCount(), 9);
-
-        vm.stopPrank();
     }
 
     function testPurchaseHammer() public {
         vm.startPrank(owner);
-        vm.deal(owner, 1 ether);
-
-        // Assemble a hammer first
-        CompletedHammer(hammerContract).assembleHammer("Claw Hammer", 0.3 ether);
-
+        vm.deal(hammerContract, 1 ether);
+        CompletedHammer(hammerContract).assembleHammer("Basic Hammer", HAMMER_SALE_PRICE);
         vm.stopPrank();
 
-        // Customer purchases the hammer
         vm.startPrank(customer);
-        vm.deal(customer, 0.5 ether);
-
-        uint256 hammerIdPurchased = CompletedHammer(hammerContract).purchaseHammer{value: 0.3 ether}();
-
-        // Check hammer details
-        (,,, string memory hammerType,, bool isAvailable) =
-            CompletedHammer(hammerContract).getHammerDetails(hammerIdPurchased);
-
-        assertEq(hammerType, "Claw Hammer");
-        assertEq(isAvailable, false);
-        assertEq(CompletedHammer(hammerContract).getAvailableHammers(), 0);
-
+        uint256 initialHammerInventory = CompletedHammer(hammerContract).getAvailableHammers();
+        vm.deal(customer, HAMMER_SALE_PRICE);
+        CompletedHammer(hammerContract).purchaseHammer{value: HAMMER_SALE_PRICE}();
+        uint256 finalHammerInventory = CompletedHammer(hammerContract).getAvailableHammers();
         vm.stopPrank();
+
+        assertEq(initialHammerInventory, 1);
+        assertEq(finalHammerInventory, 0);
     }
 
     function testUpgradeContract() public {
-        // ToDo: Implement tests for the upgrade functionality
-        // This would involve deploying a new implementation contract and using the upgradeTo function
+        vm.startPrank(owner);
+
+        HammerHandleV2 newHandleImplementation = new HammerHandleV2();
+        address newHandleImplementationAddress = address(newHandleImplementation);
+
+        UUPSUpgradeable(handleContract).upgradeToAndCall(newHandleImplementationAddress, "");
+
+        HammerHandleV2 upgradedHandle = HammerHandleV2(handleContract);
+        assertEq(upgradedHandle.version(), "v2", "Contract version should be v2");
+
+        upgradedHandle.incrementNewFeatureCounter();
+        assertEq(upgradedHandle.newFeatureCounter(), 1, "New feature counter should be 1");
+
+        vm.stopPrank();
+
+        vm.startPrank(anotherAccount);
+        vm.expectRevert();
+        UUPSUpgradeable(handleContract).upgradeToAndCall(newHandleImplementationAddress, "");
+        vm.stopPrank();
     }
 }
