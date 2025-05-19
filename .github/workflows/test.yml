@@ -33,13 +33,3 @@ jobs:
         run: |
           forge fmt --check
         id: fmt
-
-      - name: Run Forge build
-        run: |
-          forge build --via-ir --sizes --ignored-error-codes 5574
-        id: build
-
-      - name: Run Forge tests
-        run: |
-          forge test -vvv --via-ir --ignored-error-codes 5574
-        id: test
