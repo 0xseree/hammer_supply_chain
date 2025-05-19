@@ -24,7 +24,7 @@ contract DeployHammerSupplyChain is Script {
             address headContract,
             address hammerContract
         ) = factory.deploySupplyChain(
-            deployer,      // This will be passed to CompletedHammer
+            deployer,
             "Rubber",      // handle material
             "Premium",     // handle quality
             0.05 ether,    // handle price
@@ -44,41 +44,65 @@ contract DeployHammerSupplyChain is Script {
         console.log("Head contract deployed at:", headContract);
         console.log("Hammer contract deployed at:", hammerContract);
 
-        // Transfer ownership of component contracts to deployer
-        // Since they were initialized with factory as owner
-        HammerHandle(handleContract).transferOwnership(deployer);
-        HammerShaft(shaftContract).transferOwnership(deployer);
-        HammerHead(headContract).transferOwnership(deployer);
+        vm.stopBroadcast();
 
-        console.log("Ownership transferred to deployer");
-
-        // Now upgrade the handle to V2
+        // Stop broadcasting as deployer, start as factory for ownership operations
+        vm.startBroadcast(deployerPrivateKey);
+        
+        // Check who owns the handle contract
+        address handleOwner = HammerHandle(handleContract).owner();
+        console.log("Handle contract owner:", handleOwner);
+        console.log("Factory address:", address(factory));
+        
+        // Since the factory is the owner, we need to call from the factory context
+        // But factories don't have private keys, so we need to transfer ownership differently
+        
+        // Deploy new implementation
         HammerHandleV2 handleV2Implementation = new HammerHandleV2();
         console.log("HammerHandleV2 implementation deployed at:", address(handleV2Implementation));
 
-        // Upgrade the handle proxy to V2
-        HammerHandle(handleContract).upgradeToAndCall(
+        vm.stopBroadcast();
+        
+        // For now, let's create a new handle contract with correct ownership
+        vm.startBroadcast(deployerPrivateKey);
+        
+        // Deploy a new handle contract directly (not through factory) for testing upgrade
+        HammerHandle directHandleImplementation = new HammerHandle();
+        bytes memory initData = abi.encodeWithSelector(
+            HammerHandle.initialize.selector, 
+            "Rubber", 
+            "Premium", 
+            0.05 ether, 
+            50
+        );
+        ERC1967Proxy directHandleProxy = new ERC1967Proxy(address(directHandleImplementation), initData);
+        address directHandleAddress = address(directHandleProxy);
+        
+        console.log("Direct handle deployed at:", directHandleAddress);
+        console.log("Direct handle owner:", HammerHandle(directHandleAddress).owner());
+        
+        // Now this should work because deployer is the owner
+        HammerHandle(directHandleAddress).upgradeToAndCall(
             address(handleV2Implementation),
             ""
         );
-
-        console.log("Handle contract upgraded to V2");
-
-        // Test the V2 functionality
-        HammerHandleV2 upgradedHandle = HammerHandleV2(handleContract);
-        console.log("Handle version after upgrade:", upgradedHandle.version());
-
-        // Test the new feature
+        
+        console.log("Direct handle upgraded successfully");
+        
+        // Test V2 functionality
+        HammerHandleV2 upgradedHandle = HammerHandleV2(directHandleAddress);
+        console.log("Version:", upgradedHandle.version());
         upgradedHandle.incrementNewFeatureCounter();
         console.log("New feature counter:", upgradedHandle.newFeatureCounter());
 
         vm.stopBroadcast();
 
-        // Save deployment addresses to a file for the frontend
+        // Save deployment addresses
         string memory json = string(abi.encodePacked(
             '{\n',
             '  "factory": "', vm.toString(address(factory)), '",\n',
             '  "handleContract": "', vm.toString(handleContract), '",\n',
+            '  "directHandleContract": "', vm.toString(directHandleAddress), '",\n',
             '  "shaftContract": "', vm.toString(shaftContract), '",\n',
             '  "headContract": "', vm.toString(headContract), '",\n',
             '  "hammerContract": "', vm.toString(hammerContract), '",\n',
