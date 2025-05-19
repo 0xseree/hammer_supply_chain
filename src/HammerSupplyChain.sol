@@ -14,6 +14,7 @@ abstract contract ComponentBase is Initializable, UUPSUpgradeable, OwnableUpgrad
     string public quality;
     mapping(uint256 => bool) public availableComponents;
     uint256 public nextComponentId;
+
     event ComponentCreated(uint256 indexed componentId, string componentType);
     event ComponentSold(uint256 indexed componentId, address buyer);
 
@@ -91,12 +92,10 @@ contract HammerHandle is ComponentBase {
         _disableInitializers();
     }
 
-    function initialize(
-        string memory _material,
-        string memory _quality,
-        uint256 _price,
-        uint256 initialInventory
-    ) public initializer {
+    function initialize(string memory _material, string memory _quality, uint256 _price, uint256 initialInventory)
+        public
+        initializer
+    {
         __ComponentBase_init("Handle", _material, _quality, _price, initialInventory);
     }
 }
@@ -107,12 +106,10 @@ contract HammerShaft is ComponentBase {
         _disableInitializers();
     }
 
-    function initialize(
-        string memory _material,
-        string memory _quality,
-        uint256 _price,
-        uint256 initialInventory
-    ) public initializer {
+    function initialize(string memory _material, string memory _quality, uint256 _price, uint256 initialInventory)
+        public
+        initializer
+    {
         __ComponentBase_init("Shaft", _material, _quality, _price, initialInventory);
     }
 }
@@ -123,12 +120,10 @@ contract HammerHead is ComponentBase {
         _disableInitializers();
     }
 
-    function initialize(
-        string memory _material,
-        string memory _quality,
-        uint256 _price,
-        uint256 initialInventory
-    ) public initializer {
+    function initialize(string memory _material, string memory _quality, uint256 _price, uint256 initialInventory)
+        public
+        initializer
+    {
         __ComponentBase_init("Head", _material, _quality, _price, initialInventory);
     }
 }
@@ -146,14 +141,17 @@ contract CompletedHammer is Initializable, OwnableUpgradeable {
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, address _handleContract, address _shaftContract, address _headContract) public initializer {
+    function initialize(address initialOwner, address _handleContract, address _shaftContract, address _headContract)
+        public
+        initializer
+    {
         __Ownable_init(initialOwner);
         handleContract = _handleContract;
         shaftContract = _shaftContract;
         headContract = _headContract;
     }
 
-    function assembleHammer(string memory /*hammerType*/, uint256 hammerSalePrice) public onlyOwner {
+    function assembleHammer(string memory, /*hammerType*/ uint256 hammerSalePrice) public onlyOwner {
         uint256 _handlePrice = ComponentBase(handleContract).price();
         uint256 _shaftPrice = ComponentBase(shaftContract).price();
         uint256 _headPrice = ComponentBase(headContract).price();
@@ -240,7 +238,11 @@ contract HammerSupplyChainFactory {
         // Deploy completed hammer implementation and proxy
         CompletedHammer hammerImplementation = new CompletedHammer();
         bytes memory hammerData = abi.encodeWithSelector(
-            CompletedHammer.initialize.selector, deployingOwner, handleContractAddress, shaftContractAddress, headContractAddress
+            CompletedHammer.initialize.selector,
+            deployingOwner,
+            handleContractAddress,
+            shaftContractAddress,
+            headContractAddress
         );
         ERC1967Proxy hammerProxy = new ERC1967Proxy(address(hammerImplementation), hammerData);
         hammerContractAddress = address(hammerProxy);

@@ -25,16 +25,14 @@ contract HammerSupplyChainTest is Test {
         vm.startPrank(owner);
 
         HammerHandle handleImplementation = new HammerHandle();
-        bytes memory handleData = abi.encodeWithSelector(
-            HammerHandle.initialize.selector, "Rubber", "Premium", HANDLE_PRICE, 10
-        );
+        bytes memory handleData =
+            abi.encodeWithSelector(HammerHandle.initialize.selector, "Rubber", "Premium", HANDLE_PRICE, 10);
         ERC1967Proxy handleProxy = new ERC1967Proxy(address(handleImplementation), handleData);
         handleContract = address(handleProxy);
 
         HammerShaft shaftImplementation = new HammerShaft();
-        bytes memory shaftData = abi.encodeWithSelector(
-            HammerShaft.initialize.selector, "Wood", "Standard", SHAFT_PRICE, 10
-        );
+        bytes memory shaftData =
+            abi.encodeWithSelector(HammerShaft.initialize.selector, "Wood", "Standard", SHAFT_PRICE, 10);
         ERC1967Proxy shaftProxy = new ERC1967Proxy(address(shaftImplementation), shaftData);
         shaftContract = address(shaftProxy);
 

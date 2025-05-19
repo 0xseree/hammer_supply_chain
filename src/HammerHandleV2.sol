@@ -14,12 +14,10 @@ contract HammerHandleV2 is ComponentBase {
         _disableInitializers();
     }
 
-    function initialize(
-        string memory _material,
-        string memory _quality,
-        uint256 _price,
-        uint256 initialInventory
-    ) public initializer {
+    function initialize(string memory _material, string memory _quality, uint256 _price, uint256 initialInventory)
+        public
+        initializer
+    {
         __ComponentBase_init("Handle", _material, _quality, _price, initialInventory);
     }
 

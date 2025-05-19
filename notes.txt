@@ -1,3 +1,9 @@
 forge script script/Deploy.s.sol:DeployHammerSupplyChain --rpc-url http://localhost:8545 --broadcast --via-ir --ffi
 
-forge script script/Deploy.s.sol:DeployHammerSupplyChain --rpc-url https://polygon-amoy.g.alchemy.com/v2/siU1ApdZnoPW2etXct7gdR1bNh7crD5r --broadcast --via-ir --ffi
+forge script script/Deploy.s.sol:DeployHammerSupplyChain --rpc-url https://scroll-sepolia.g.alchemy.com/v2/siU1ApdZnoPW2etXct7gdR1bNh7crD5r --broadcast --via-ir --ffi
+
+cast send 0x981d3fE1c628B709D77B9A44566037FCAa406b93 \
+  --value 1000000000000000000 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --rpc-url http://localhost:8545 \
+  --gas-limit 21000
