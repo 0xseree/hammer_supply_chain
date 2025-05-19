@@ -1,0 +1,10 @@
+{
+  "factory": "0xdb6d9c538ebb02c551E02e47Be971a226b77b534",
+  "handleContract": "0x2Ebb292fC04c9607588a194Ae4E9c232f6657B70",
+  "directHandleContract": "0x555D7cbD0C0081B5a925084F21d6E14c9d870C5E",
+  "shaftContract": "0x223d0cab6a14d5339eC43bF18FFeF5307741385E",
+  "headContract": "0x42054FC2F5a5Bb59970d7E5A9D2EEAE3e5d62A1d",
+  "hammerContract": "0x73486Bf90752aFf35a8Aa402cF922a1faac01Da7",
+  "handleV2Implementation": "0x41247b7b9a77Ed7b75F3D541017a7246d2d79D65",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+}

@@ -1,1 +1,3 @@
-forge script script/Deploy.s.sol:DeployHammerSupplyChain --rpc-url http://localhost:8545 --broadcast --via-ir
+forge script script/Deploy.s.sol:DeployHammerSupplyChain --rpc-url http://localhost:8545 --broadcast --via-ir --ffi
+
+forge script script/Deploy.s.sol:DeployHammerSupplyChain --rpc-url https://polygon-amoy.g.alchemy.com/v2/siU1ApdZnoPW2etXct7gdR1bNh7crD5r --broadcast --via-ir --ffi
